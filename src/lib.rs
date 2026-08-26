@@ -131,7 +131,7 @@ where
     T: Clone,
 {
     fn clone(&self) -> Self {
-        let mut values = MaybeUninit::uninit_array();
+        let mut values = [const { MaybeUninit::uninit() }; LEN];
         if self.size > LEN - self.start {
             for i in (self.start..LEN).chain(0..(self.size - (LEN - self.start))) {
                 // SAFETY: This use of `clone_initialized_uninit` is safe because it is an invariant
@@ -156,7 +156,7 @@ where
 impl<T, const LEN: usize> Default for Inner<T, LEN> {
     fn default() -> Self {
         Self {
-            values: MaybeUninit::uninit_array(),
+            values: [const { MaybeUninit::uninit() }; LEN],
             start: 0,
             size: 0,
         }
