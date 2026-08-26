@@ -19,10 +19,7 @@ pub struct RingQueue<T, const LEN: usize> {
     push_cond: Condvar,
 }
 
-impl<T, const LEN: usize> RingQueue<T, LEN>
-where
-    T: Debug,
-{
+impl<T, const LEN: usize> RingQueue<T, LEN> {
     /// Create a new `RingQueue`.
     pub fn new() -> Self {
         Self::default()
@@ -36,13 +33,11 @@ where
             .unwrap();
         let ret = inner.pop();
         self.push_cond.notify_one();
-        println!("Popping {:?} from queue", ret);
         ret
     }
 
     /// Adds a new value to the end of the queue. Blocks while the queue is full.
     pub fn push(&self, value: T) {
-        println!("Pushing {:?} into queue", value);
         let mut inner = self
             .push_cond
             .wait_while(self.inner.lock().unwrap(), |inner| inner.size == LEN)
