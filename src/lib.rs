@@ -166,6 +166,23 @@ impl<T, const LEN: usize> Default for Inner<T, LEN> {
     }
 }
 
+impl<T, const LEN: usize> Drop for Inner<T, LEN> {
+    fn drop(&mut self) {
+        let size = mem::take(&mut self.size);
+        let start = mem::take(&mut self.start);
+        let (early, late) = self.values.split_at_mut(start);
+        late.iter_mut()
+            .chain(early.iter_mut())
+            .take(size)
+            .for_each(|el| {
+                // SAFETY: This use of `MaybeUninit::assume_init_drop` is safe because it is an
+                //         invariant that the first `size` elements logically after `start` are
+                //         initialized.
+                unsafe { el.assume_init_drop() }
+            });
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
