@@ -295,4 +295,21 @@ mod tests {
             (10..20).collect::<Vec<_>>(),
         );
     }
+
+    #[cfg(miri)]
+    #[test]
+    fn it_drops_the_right_elements() {
+        struct NontrivialDrop(mem::ManuallyDrop<u32>);
+        impl Drop for NontrivialDrop {
+            fn drop(&mut self) {
+                let _ = mem::ManuallyDrop::into_inner(self.0);
+            }
+        }
+
+        let queue = RingQueue::<_, 10>::new();
+        queue.push(NontrivialDrop(mem::ManuallyDrop::new(3)));
+        queue.push(NontrivialDrop(mem::ManuallyDrop::new(17)));
+        queue.pop();
+        let _ = mem::drop(queue);
+    }
 }
