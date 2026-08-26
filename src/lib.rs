@@ -1,12 +1,5 @@
 //! A concurrent queue that uses a ring buffer to store its values.
 
-#![feature(
-    box_syntax,
-    maybe_uninit_ref,
-    maybe_uninit_uninit_array,
-    min_const_generics,
-    thread_spawn_unchecked
-)]
 #![warn(missing_debug_implementations, rust_2018_idioms)]
 
 use std::{fmt::Debug, mem::{self, MaybeUninit}, sync::{Condvar, Mutex}};
