@@ -2,7 +2,11 @@
 
 #![warn(missing_debug_implementations, rust_2018_idioms)]
 
-use std::{fmt::Debug, mem::{self, MaybeUninit}, sync::{Condvar, Mutex}};
+use std::{
+    fmt::Debug,
+    mem::{self, MaybeUninit},
+    sync::{Condvar, Mutex},
+};
 
 /// A concurrent fixed-size queue.
 #[derive(Debug)]
@@ -26,7 +30,8 @@ where
 
     /// Gets the first value out of the queue. Blocks while the queue is empty.
     pub fn pop(&self) -> T {
-        let mut inner = self.pop_cond
+        let mut inner = self
+            .pop_cond
             .wait_while(self.inner.lock().unwrap(), |inner| inner.size == 0)
             .unwrap();
         let ret = inner.pop();
@@ -38,7 +43,8 @@ where
     /// Adds a new value to the end of the queue. Blocks while the queue is full.
     pub fn push(&self, value: T) {
         println!("Pushing {:?} into queue", value);
-        let mut inner = self.push_cond
+        let mut inner = self
+            .push_cond
             .wait_while(self.inner.lock().unwrap(), |inner| inner.size == LEN)
             .unwrap();
         inner.push(value);
@@ -107,9 +113,7 @@ impl<T, const LEN: usize> Inner<T, LEN> {
         let ret = mem::replace(&mut self.values[old_start], MaybeUninit::uninit());
         // SAFETY: This use of `clone_initialized_uninit` is safe because it is an invariant that
         //         the first `self.size` values logically after `self.start` are initialized.
-        unsafe {
-            ret.assume_init()
-        }
+        unsafe { ret.assume_init() }
     }
 
     pub fn push(&mut self, value: T) {
@@ -185,22 +189,28 @@ mod tests {
         // SAFETY: This call to `spawn_unchecked` is safe because its only reference to this thread
         //         is `queue`, which is dropped after `sender` is `join`ed.
         let sender = unsafe {
-            ThreadBuilder::new().name("Sender".into()).spawn_unchecked(|| {
-                for i in 0..10 {
-                    queue.push(i);
-                }
-            }).unwrap()
+            ThreadBuilder::new()
+                .name("Sender".into())
+                .spawn_unchecked(|| {
+                    for i in 0..10 {
+                        queue.push(i);
+                    }
+                })
+                .unwrap()
         };
         // SAFETY: This call to `spawn_unchecked` is safe because its only reference to this thread
         //         is `queue`, which is dropped after `receiver` is `join`ed.
         let receiver = unsafe {
-            ThreadBuilder::new().name("Receiver".into()).spawn_unchecked(|| {
-                let mut ret = vec![];
-                for _ in 0..10 {
-                    ret.push(queue.pop());
-                }
-                return ret;
-            }).unwrap()
+            ThreadBuilder::new()
+                .name("Receiver".into())
+                .spawn_unchecked(|| {
+                    let mut ret = vec![];
+                    for _ in 0..10 {
+                        ret.push(queue.pop());
+                    }
+                    return ret;
+                })
+                .unwrap()
         };
         sender.join().unwrap();
         let received = receiver.join().unwrap();
@@ -213,41 +223,57 @@ mod tests {
         // SAFETY: This call to `spawn_unchecked` is safe because its only reference to this thread
         //         is `queue`, which is dropped after `sender` is `join`ed.
         let sender1 = unsafe {
-            ThreadBuilder::new().name("Sender1".into()).spawn_unchecked(|| {
-                for i in 0..10 {
-                    queue.push(i);
-                }
-            }).unwrap()
+            ThreadBuilder::new()
+                .name("Sender1".into())
+                .spawn_unchecked(|| {
+                    for i in 0..10 {
+                        queue.push(i);
+                    }
+                })
+                .unwrap()
         };
         // SAFETY: This call to `spawn_unchecked` is safe because its only reference to this thread
         //         is `queue`, which is dropped after `sender` is `join`ed.
         let sender2 = unsafe {
-            ThreadBuilder::new().name("Sender2".into()).spawn_unchecked(|| {
-                for i in 10..20 {
-                    queue.push(i);
-                }
-            }).unwrap()
+            ThreadBuilder::new()
+                .name("Sender2".into())
+                .spawn_unchecked(|| {
+                    for i in 10..20 {
+                        queue.push(i);
+                    }
+                })
+                .unwrap()
         };
         // SAFETY: This call to `spawn_unchecked` is safe because its only reference to this thread
         //         is `queue`, which is dropped after `receiver` is `join`ed.
         let receiver = unsafe {
-            ThreadBuilder::new().name("Receiver".into()).spawn_unchecked(|| {
-                let mut ret = vec![];
-                for _ in 0..20 {
-                    ret.push(queue.pop());
-                }
-                return ret;
-            }).unwrap()
+            ThreadBuilder::new()
+                .name("Receiver".into())
+                .spawn_unchecked(|| {
+                    let mut ret = vec![];
+                    for _ in 0..20 {
+                        ret.push(queue.pop());
+                    }
+                    return ret;
+                })
+                .unwrap()
         };
         sender1.join().unwrap();
         sender2.join().unwrap();
         let received = receiver.join().unwrap();
         assert_eq!(
-            received.iter().copied().filter(|&x| x < 10).collect::<Vec<_>>(),
+            received
+                .iter()
+                .copied()
+                .filter(|&x| x < 10)
+                .collect::<Vec<_>>(),
             (0..10).collect::<Vec<_>>(),
         );
         assert_eq!(
-            received.into_iter().filter(|&x| x >= 10).collect::<Vec<_>>(),
+            received
+                .into_iter()
+                .filter(|&x| x >= 10)
+                .collect::<Vec<_>>(),
             (10..20).collect::<Vec<_>>(),
         );
     }
