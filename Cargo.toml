@@ -1,6 +1,6 @@
 [package]
 name = "ring-queue"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Kevin Moonen <moone140@umn.edu>"]
 edition = "2018"
 rust-version = "1.82.0"
