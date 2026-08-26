@@ -139,18 +139,20 @@ where
 {
     fn clone(&self) -> Self {
         let mut values = [const { MaybeUninit::uninit() }; LEN];
-        if self.size > LEN - self.start {
-            for i in (self.start..LEN).chain(0..(self.size - (LEN - self.start))) {
-                // SAFETY: This use of `clone_initialized_uninit` is safe because it is an invariant
-                //         that the first `self.size` values after `self.start` are initialized.
-                values[i] = unsafe { clone_initialized_uninit(&self.values[i]) };
-            }
-        } else {
-            for i in self.start..(self.start + self.size) {
-                // SAFETY: This use of `clone_initialized_uninit` is safe because it is an invariant
-                //         that the first `self.size` values after `self.start` are initialized.
-                values[i] = unsafe { clone_initialized_uninit(&self.values[i]) };
-            }
+        {
+            let (self_early, self_late) = self.values.split_at(self.start);
+            let (ret_early, ret_late) = values.split_at_mut(self.start);
+            ret_late
+                .iter_mut()
+                .chain(ret_early.iter_mut())
+                .zip(self_late.iter().chain(self_early.iter()))
+                .take(self.size)
+                .for_each(|(ret_el, self_el)| {
+                    // SAFETY: This use of `clone_initialized_uninit` is safe because it is an
+                    //         invariant that the first `self.size` values after `self.start` are
+                    //         initialized.
+                    *ret_el = unsafe { clone_initialized_uninit(self_el) }
+                });
         }
         Self {
             values,
