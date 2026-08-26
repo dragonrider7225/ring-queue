@@ -21,8 +21,12 @@ pub struct RingQueue<T, const LEN: usize> {
 
 impl<T, const LEN: usize> RingQueue<T, LEN> {
     /// Create a new `RingQueue`.
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self {
+            inner: Mutex::new(Inner::new()),
+            pop_cond: Condvar::new(),
+            push_cond: Condvar::new(),
+        }
     }
 
     /// Gets the first value out of the queue. Blocks while the queue is empty.
@@ -71,11 +75,7 @@ where
 
 impl<T, const LEN: usize> Default for RingQueue<T, LEN> {
     fn default() -> Self {
-        Self {
-            inner: Default::default(),
-            pop_cond: Default::default(),
-            push_cond: Default::default(),
-        }
+        Self::new()
     }
 }
 
@@ -98,6 +98,14 @@ struct Inner<T, const LEN: usize> {
 }
 
 impl<T, const LEN: usize> Inner<T, LEN> {
+    pub const fn new() -> Self {
+        Self {
+            values: [const { MaybeUninit::uninit() }; LEN],
+            start: 0,
+            size: 0,
+        }
+    }
+
     pub fn pop(&mut self) -> T {
         // This method upholds the invariant on `self.values` because it reduces the size of the
         // window covered by the invariant then shifts it so that it includes all and only those
@@ -154,11 +162,7 @@ where
 
 impl<T, const LEN: usize> Default for Inner<T, LEN> {
     fn default() -> Self {
-        Self {
-            values: [const { MaybeUninit::uninit() }; LEN],
-            start: 0,
-            size: 0,
-        }
+        Self::new()
     }
 }
 
