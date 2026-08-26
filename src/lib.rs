@@ -114,8 +114,8 @@ impl<T, const LEN: usize> Inner<T, LEN> {
         let old_start = self.start;
         self.start = (self.start + 1) % LEN;
         let ret = mem::replace(&mut self.values[old_start], MaybeUninit::uninit());
-        // SAFETY: This use of `clone_initialized_uninit` is safe because it is an invariant that
-        //         the first `self.size` values logically after `self.start` are initialized.
+        // SAFETY: This use of `assume_init` is safe because it is an invariant that the first
+        //         `self.size` values logically after `self.start` are initialized.
         unsafe { ret.assume_init() }
     }
 
